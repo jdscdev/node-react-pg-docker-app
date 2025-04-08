@@ -1,59 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import './css/App.css';
+import ProductForm from './components/ProductForm';
+import ProductList from './components/ProductList';
+import { getProducts, createProduct, updateProduct, deleteProduct } from './api/products';
 
-function App() {
+const App = () => {
   const [products, setProducts] = useState([]);
-  const [newProduct, setNewProduct] = useState({ name: '', price: '' });
-
-  const fetchProducts = () => {
-    fetch('http://localhost:5000/api/products')
-      .then(res => res.json())
-      .then(setProducts);
-  };
 
   useEffect(() => {
-    fetchProducts();
+    getProducts().then(setProducts);
   }, []);
 
-  const handleChange = e => {
-    setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  const handleAddProduct = async (product) => {
+    const newProduct = await createProduct(product);
+    setProducts([...products, newProduct]);
   };
 
-  const handleAdd = () => {
-    fetch('http://localhost:5000/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newProduct),
-    })
-      .then(() => {
-        setNewProduct({ name: '', price: '' });
-        fetchProducts();
-      });
-  };
+  // const handleUpdateProduct = async (id, updatedProduct) => {
+  //   const product = await updateProduct(id, updatedProduct);
+  //   setProducts(products.map((prod) => (prod.id === id ? product : prod)));
+  // };
 
-  const handleDelete = id => {
-    fetch(`http://localhost:5000/api/products/${id}`, {
-      method: 'DELETE',
-    }).then(fetchProducts);
+  const handleDeleteProduct = (id) => {
+    deleteProduct(id);
+    setProducts(products.filter((prod) => prod.id !== id));
   };
 
   return (
-    <div className="App">
+    <div>
       <h1>Product Manager</h1>
-      <input name="name" value={newProduct.name} onChange={handleChange} placeholder="Name" />
-      <input name="price" value={newProduct.price} onChange={handleChange} placeholder="Price" type="number" />
-      <button onClick={handleAdd}>Add Product</button>
-      <h2>Product List</h2>
-      <ul>
-        {products.map(p => (
-          <li key={"prod_id" + p.id}>
-            {p.name} - ${p.price}
-            <button onClick={() => handleDelete(p.id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+      <ProductForm onAdd={handleAddProduct} />
+      <ProductList onDelete={handleDeleteProduct} products={products} />
     </div>
   );
-}
+};
 
 export default App;
