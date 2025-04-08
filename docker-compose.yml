@@ -10,7 +10,6 @@ services:
       - DB_PASS=password
       - DB_NAME=mydb
     volumes:
-      - ./backend/sql/db.sql:/docker-entrypoint-initdb.d/db.sql
       - ./backend:/app
       - /app/node_modules
     depends_on:
@@ -36,6 +35,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      - ./backend/sql/db.sql:/docker-entrypoint-initdb.d/db.sql
       - pgdata:/var/lib/postgresql/data
 
 volumes:
