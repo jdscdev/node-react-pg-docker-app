@@ -9,13 +9,21 @@ services:
       - DB_USER=postgres
       - DB_PASS=password
       - DB_NAME=mydb
+    volumes:
+      - ./backend/sql/db.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
       - db
+    command: npm run dev
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Prevents node_modules overwrite
     depends_on:
       - backend
 
