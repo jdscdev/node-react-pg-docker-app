@@ -43,6 +43,7 @@ function App() {
       <input name="name" value={newProduct.name} onChange={handleChange} placeholder="Name" />
       <input name="price" value={newProduct.price} onChange={handleChange} placeholder="Price" type="number" />
       <button onClick={handleAdd}>Add Product</button>
+      <h2>Product List</h2>
       <ul>
         {products.map(p => (
           <li key={"prod_id" + p.id}>
