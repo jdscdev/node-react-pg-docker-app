@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import '../css/modal.css';
 
-const ModalWindow = ({ handleClose, show, children }) => {
+const ModalWindow = ({ handleClose, show = false, children }) => {
   const showHideClassName = show ? "modal display-block" : "modal display-none";
 
   return (

@@ -1,5 +1,6 @@
 const BASE_URL = 'http://localhost:5000';
 const API_URL = `${BASE_URL}/api/products`;
+const API_HEADERS = { 'Content-Type': 'application/json' };
 
 export async function getProducts() {
   const res = await fetch(API_URL);
@@ -9,9 +10,7 @@ export async function getProducts() {
 export async function createProduct(product) {
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: API_HEADERS,
     body: JSON.stringify(product),
   });
   return await res.json();
@@ -20,9 +19,7 @@ export async function createProduct(product) {
 export async function updateProduct(id, product) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: API_HEADERS,
     body: JSON.stringify(product),
   });
   return await res.json();
