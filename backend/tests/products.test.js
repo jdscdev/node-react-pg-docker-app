@@ -12,10 +12,12 @@ const request = require('supertest');
 const express = require('express');
 const productsRouter = require('../routes/products');
 const { Pool } = require('pg'); // mocked
+const errorHandler = require('../middlewares/errorHandler');
 
 const app = express();
 app.use(express.json());
 app.use('/api/products', productsRouter);
+app.use(errorHandler);
 
 // Access the mocked pool
 const pool = new Pool();
@@ -25,62 +27,86 @@ describe('Product Routes', () => {
     jest.clearAllMocks();
   });
 
-  test('GET /api/products returns products', async () => {
-    const mockProducts = { rows: [{ id: 1, name: 'Test Product', price: 100 }] };
-    pool.query.mockResolvedValue(mockProducts);
+  describe('Read', () => {
+    test('GET /api/products returns 500 on error', async () => {
+      pool.query.mockRejectedValue(new Error('Database error'));
 
-    const res = await request(app).get('/api/products');
+      const res = await request(app).get('/api/products');
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual(mockProducts.rows);
-    expect(pool.query).toHaveBeenCalledWith('SELECT * FROM products');
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({
+        status: 'error',
+        statusCode: 500,
+        message: 'Database error',
+      });
+    });
+
+    test('GET /api/products returns products', async () => {
+      const mockProducts = { rows: [{ id: 1, name: 'Test Product', price: 100 }] };
+      pool.query.mockResolvedValue(mockProducts);
+
+      const res = await request(app).get('/api/products');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual(mockProducts.rows);
+      expect(pool.query).toHaveBeenCalledWith('SELECT * FROM products');
+    });
   });
 
-  test('POST /api/products creates a product', async () => {
-    const newProduct = { name: 'Phone', price: 500 };
-    const mockResult = { rows: [{ id: 2, ...newProduct }] };
-    pool.query.mockResolvedValue(mockResult);
+  describe('Create', () => {
+    test('POST /api/products returns 400 on missing name', async () => {
+      const newProduct = { price: 100 };
+      const res = await request(app).post('/api/products').send(newProduct);
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toEqual({
+        status: 'error',
+        statusCode: 400,
+        message: 'Name and price are required',
+      });
+      expect(pool.query).not.toHaveBeenCalled();
+    });
 
-    const res = await request(app).post('/api/products').send(newProduct);
+    test('POST /api/products creates a product', async () => {
+      const newProduct = { name: 'Phone', price: 500 };
+      const mockResult = { rows: [{ id: 2, ...newProduct }] };
+      pool.query.mockResolvedValue(mockResult);
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual(mockResult.rows[0]);
-    expect(pool.query).toHaveBeenCalledWith(
-      'INSERT INTO products (name, price) VALUES ($1, $2) RETURNING *',
-      [newProduct.name, newProduct.price]
-    );
+      const res = await request(app).post('/api/products').send(newProduct);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual(mockResult.rows[0]);
+      expect(pool.query).toHaveBeenCalledWith(
+        'INSERT INTO products (name, price) VALUES ($1, $2) RETURNING *',
+        [newProduct.name, newProduct.price]
+      );
+    });
   });
 
-  test('PUT /api/products/:id updates a product', async () => {
-    const updatedProduct = { name: 'Updated Product', price: 150 };
-    const mockResult = { rows: [{ id: '1', ...updatedProduct }] };
-    pool.query.mockResolvedValue(mockResult);
+  describe('Update', () => {
+    test('PUT /api/products/:id updates a product', async () => {
+      const updatedProduct = { name: 'Updated Product', price: 150 };
+      const mockResult = { rows: [{ id: '1', ...updatedProduct }] };
+      pool.query.mockResolvedValue(mockResult);
 
-    const res = await request(app).put('/api/products/1').send(updatedProduct);
+      const res = await request(app).put('/api/products/1').send(updatedProduct);
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual(mockResult.rows[0]);
-    expect(pool.query).toHaveBeenCalledWith(
-      'UPDATE products SET name = $1, price = $2 WHERE id = $3 RETURNING *',
-      [updatedProduct.name, updatedProduct.price, '1']
-    );
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual(mockResult.rows[0]);
+      expect(pool.query).toHaveBeenCalledWith(
+        'UPDATE products SET name = $1, price = $2 WHERE id = $3 RETURNING *',
+        [updatedProduct.name, updatedProduct.price, '1']
+      );
+    });
   });
 
-  test('DELETE /api/products/:id deletes a product', async () => {
-    pool.query.mockResolvedValue({});
+  describe('Delete', () => {
+    test('DELETE /api/products/:id deletes a product', async () => {
+      pool.query.mockResolvedValue({});
 
-    const res = await request(app).delete('/api/products/1');
+      const res = await request(app).delete('/api/products/1');
 
-    expect(res.statusCode).toBe(204);
-    expect(pool.query).toHaveBeenCalledWith('DELETE FROM products WHERE id = $1', ['1']);
+      expect(res.statusCode).toBe(204);
+      expect(pool.query).toHaveBeenCalledWith('DELETE FROM products WHERE id = $1', ['1']);
+    });
   });
-
-  // test('GET /api/products returns 500 on error', async () => {
-  //   pool.query.mockRejectedValue(new Error('Database error'));
-
-  //   const res = await request(app).get('/api/products');
-
-  //   expect(res.statusCode).toBe(500);
-  //   expect(res.text).toBe('Internal Server Error');
-  // });
 });
