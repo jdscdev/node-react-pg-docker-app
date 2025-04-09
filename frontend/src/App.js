@@ -2,12 +2,18 @@ import React, { useEffect, useState } from 'react';
 import ProductForm from './components/ProductForm';
 import ProductList from './components/ProductList';
 import { getProducts, createProduct, updateProduct, deleteProduct } from './api/products';
+import { useErrorHandler } from './hooks/useErrorHandler';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App = () => {
+  const { error, handleError, clearError } = useErrorHandler();
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    getProducts().then(setProducts);
+    clearError();
+    getProducts()
+      .then(setProducts)
+      .catch(handleError);
   }, []);
 
   const handleAddProduct = async (product) => {
@@ -28,9 +34,16 @@ const App = () => {
 
   return (
     <div>
-      <h1>Product Manager</h1>
-      <ProductForm onAddOrEdit={handleAddProduct} />
-      <ProductList onDelete={handleDeleteProduct} onAddOrEdit={handleUpdateProduct} products={products} />
+      <h1>Products</h1>
+      {error && (
+        <div style={{ color: 'red' }}>
+          ⚠️ {error.message} (code: {error.code})
+        </div>
+      )}
+      <ErrorBoundary>
+        <ProductForm onAddOrEdit={handleAddProduct} />
+        <ProductList onDelete={handleDeleteProduct} onAddOrEdit={handleUpdateProduct} products={products} />
+      </ErrorBoundary>
     </div>
   );
 };
