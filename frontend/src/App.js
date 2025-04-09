@@ -15,10 +15,11 @@ const App = () => {
     setProducts([...products, newProduct]);
   };
 
-  // const handleUpdateProduct = async (id, updatedProduct) => {
-  //   const product = await updateProduct(id, updatedProduct);
-  //   setProducts(products.map((prod) => (prod.id === id ? product : prod)));
-  // };
+  const handleUpdateProduct = async (product) => {
+    const updatedProduct = await updateProduct(product.id, product);
+    const updatedProducts = products.map((prod) => (prod.id === product.id ? updatedProduct : prod));
+    setProducts(updatedProducts);
+  };
 
   const handleDeleteProduct = (id) => {
     deleteProduct(id);
@@ -28,8 +29,8 @@ const App = () => {
   return (
     <div>
       <h1>Product Manager</h1>
-      <ProductForm onAdd={handleAddProduct} />
-      <ProductList onDelete={handleDeleteProduct} products={products} />
+      <ProductForm onAddOrEdit={handleAddProduct} />
+      <ProductList onDelete={handleDeleteProduct} onAddOrEdit={handleUpdateProduct} products={products} />
     </div>
   );
 };
